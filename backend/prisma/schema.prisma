@@ -10,23 +10,67 @@ datasource db {
   url      = "file:./dev.db"
 }
 
-model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  username  String   @unique
-  password  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  posts     Post[]
+model Order {
+  id              Int      @id @default(autoincrement())
+  customerName    String   @map("customer_name")
+  customerPhone   String   @map("customer_phone")
+  customerEmail   String?  @map("customer_email")
+  deliveryAddress String?  @map("delivery_address")
+  orderType       String   @map("order_type") // "delivery" or "to-go"
+  total           Float
+  status          String   @default("new") // "new", "accepted", "rejected", "preparing", "ready", "completed", "cancelled"
+  paymentMethod   String   @map("payment_method") // "cash" or "card" (stubbed)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  items           OrderItem[]
+
+  @@map("orders")
 }
 
-model Post {
-  id        Int      @id @default(autoincrement())
-  title     String
-  content   String?
-  published Boolean  @default(false)
-  authorId  Int
-  author    User     @relation(fields: [authorId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model OrderItem {
+  id              Int      @id @default(autoincrement())
+  orderId         Int      @map("order_id")
+  menuItemId      Int      @map("menu_item_id")
+  quantity        Int
+  priceAtOrder    Float    @map("price_at_order")
+  itemNameAtOrder String   @map("item_name_at_order")
+  order           Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem        MenuItem @relation(fields: [menuItemId], references: [id])
+
+  @@map("order_items")
+}
+
+model MenuCategory {
+  id        Int        @id @default(autoincrement())
+  name      String
+  sortOrder Int        @map("sort_order") @default(0)
+  items     MenuItem[]
+
+  @@map("menu_categories")
+}
+
+model MenuItem {
+  id             Int           @id @default(autoincrement())
+  menuCategoryId Int           @map("menu_category_id")
+  name           String
+  description    String?
+  price          Float
+  imageUrl       String?       @map("image_url")
+  visible        Boolean       @default(true)
+  sortOrder      Int           @map("sort_order") @default(0)
+  category       MenuCategory  @relation(fields: [menuCategoryId], references: [id])
+  orderItems     OrderItem[]
+
+  @@map("menu_items")
+}
+
+model BusinessInfo {
+  id      Int     @id @default(autoincrement())
+  name    String
+  address String?
+  phone   String?
+  hours   String?
+  logoUrl String? @map("logo_url")
+
+  @@map("business_info")
 }

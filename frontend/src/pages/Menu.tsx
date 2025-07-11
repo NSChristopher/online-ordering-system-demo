@@ -7,13 +7,19 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Plus, ShoppingCart, Search, Store, Clock } from 'lucide-react';
 import { toast } from 'sonner';
+import CartDrawer from '../components/CartDrawer';
 
-const Menu: React.FC = () => {
+interface MenuProps {
+  onCheckout: () => void;
+}
+
+const Menu: React.FC<MenuProps> = ({ onCheckout }) => {
   const { categories, loading, error } = useMenu();
   const { addItem, itemCount, total } = useCart();
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+  const [isCartOpen, setIsCartOpen] = useState(false);
 
   const filteredItems = React.useMemo(() => {
     let items = categories.flatMap(category => category.items || []);
@@ -39,6 +45,15 @@ const Menu: React.FC = () => {
 
   const handleItemClick = (item: MenuItem) => {
     setSelectedItem(item);
+  };
+
+  const handleCartClick = () => {
+    setIsCartOpen(true);
+  };
+
+  const handleCheckout = () => {
+    setIsCartOpen(false);
+    onCheckout();
   };
 
   if (loading) {
@@ -88,7 +103,7 @@ const Menu: React.FC = () => {
             {/* Cart button */}
             <Button 
               className="relative"
-              onClick={() => {/* TODO: Open cart drawer */}}
+              onClick={handleCartClick}
             >
               <ShoppingCart className="h-5 w-5 mr-2" />
               Cart
@@ -198,7 +213,7 @@ const Menu: React.FC = () => {
 
       {/* Persistent Cart Bar */}
       {itemCount > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 bg-blue-600 text-white p-4 shadow-lg z-50">
+        <div className="fixed bottom-0 left-0 right-0 bg-blue-600 text-white p-4 shadow-lg z-40">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <div>
               <span className="font-semibold">{itemCount} item{itemCount !== 1 ? 's' : ''}</span>
@@ -206,7 +221,7 @@ const Menu: React.FC = () => {
             </div>
             <Button 
               variant="secondary"
-              onClick={() => {/* TODO: Open cart */}}
+              onClick={handleCartClick}
             >
               View Cart →
             </Button>
@@ -214,15 +229,25 @@ const Menu: React.FC = () => {
         </div>
       )}
 
-      {/* Item Detail Modal - TODO: Implement */}
+      {/* Item Detail Modal */}
       {selectedItem && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-md w-full p-6">
+            {selectedItem.imageUrl && (
+              <div className="aspect-video rounded-lg overflow-hidden mb-4">
+                <img
+                  src={selectedItem.imageUrl}
+                  alt={selectedItem.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
             <h3 className="text-xl font-bold mb-2">{selectedItem.name}</h3>
             <p className="text-gray-600 mb-4">{selectedItem.description}</p>
             <div className="flex justify-between items-center mb-4">
-              <span className="text-2xl font-bold">${selectedItem.price.toFixed(2)}</span>
+              <span className="text-2xl font-bold text-blue-600">${selectedItem.price.toFixed(2)}</span>
               <Button onClick={() => handleAddToCart(selectedItem)}>
+                <Plus className="h-4 w-4 mr-2" />
                 Add to Cart
               </Button>
             </div>
@@ -236,6 +261,13 @@ const Menu: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Cart Drawer */}
+      <CartDrawer
+        isOpen={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
+        onCheckout={handleCheckout}
+      />
     </div>
   );
 };
